@@ -85,4 +85,17 @@ public class ValidMathExpressionTests {
         mathExpression.setMathExpression("10/5+(7-3)*2");
         assertTrue(mathExpression.isValid());
     }
+
+    @Test
+    public void testValidExpressionWithSqrt() {
+        mathExpression.setMathExpression("sqrt(16)");
+        assertTrue(mathExpression.isValid());
+    }
+
+    @Test
+    public void testValidExpressionWithSqrt2() {
+        mathExpression.setMathExpression("sqrt(7+2)");
+        assertTrue(mathExpression.isValid());
+    }
+
 }

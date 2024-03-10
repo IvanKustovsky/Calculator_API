@@ -22,7 +22,8 @@ public class MathExpression {
 
     public boolean isValid() {
         Stack<String> stack = new Stack<>();
-        String[] strings = mathExpression.trim().split("(?<=[-+*/%()^])|(?=[-+*/%()^])|(?<=sqrt)|(?=sqrt)");
+        String[] strings = mathExpression.trim().
+                split("(?<=[-+*/%()^])|(?=[-+*/%()^])|(?<=sqrt)|(?=sqrt)|(?<=sin)|(?=sin)|(?<=cos)|(?=cos)");
 
         for (int i = 0; i < strings.length; i++) {
             String str = strings[i];
@@ -33,11 +34,11 @@ public class MathExpression {
                     return false;
                 }
                 // Перевіряємо, чи після закривної дужки іде оператор
-                if (i + 1 < strings.length && !isOperator(strings[i + 1])) {
+                if (i + 1 < strings.length && !isOperator(strings[i + 1]) && !isBracket(strings[i + 1])) {
                     return false;
                 }
             } else if (isOperator(str)) {
-                if (isSquare(str)) {
+                if (isSquareRoot(str)) {
                     continue;
                 }
                 // Перевіряємо, чи перед оператором є число або закривна дужка
@@ -53,7 +54,7 @@ public class MathExpression {
                     return false;
                 }
             } else {
-                if (!isNumber(str) && !isTrigonometricFunction(str)) {
+                if (!isNumber(str) && !isTrigonometricFunction(str) && !isSquareRoot(str)) {
                     return false;
                 }
             }
@@ -67,100 +68,122 @@ public class MathExpression {
             throw new IllegalMathExpressionException();
         }
         double result = 0;
-        String[] strings = mathExpression.trim().split("(?<=[-+*/%()^])|(?=[-+*/%()^])|(?<=sqrt)|(?=sqrt)");
-        int i = 0;
-        while (i < strings.length) {
-            if (strings[i].equals("(")) {
+        String[] strings = mathExpression.trim().
+                split("(?<=[-+*/%()^])|(?=[-+*/%()^])|(?<=sqrt)|(?=sqrt)|(?<=sin)|(?=sin)|(?<=cos)|(?=cos)");
+        int index = 0;
+        while (index < strings.length) {
+            if (strings[index].equals("(")) {
                 // обробка виразу у дужках
                 int openParenthesesCount = 1;
-                int j = i + 1;
+                int j = index + 1;
                 while (j < strings.length) {
                     if (strings[j].equals("(")) {
                         openParenthesesCount++;
                     } else if (strings[j].equals(")")) {
                         openParenthesesCount--;
                         if (openParenthesesCount == 0) {
-                            result += calcMathExpression(concatenateStrings(strings, i + 1, j));
-                            i = j;
+                            result += calcMathExpression(concatenateStrings(strings,index + 1, j));
+                            index = j;
                             break;
                         }
                     }
                     j++;
                 }
-            } else if (strings[i].equals("+") || strings[i].equals("-")) {
-                // Додавання або віднімання
-                i++;
-                if (i < strings.length && isNumber(strings[i])) {
-                    double operand = Double.parseDouble(strings[i]);
-                    result = strings[i - 1].equals("+") ? result + operand : result - operand;
+            } else if (isOperator(strings[index]) || isSquareRoot(strings[index]) || isTrigonometricFunction(strings[index])) {
+                // Оператори +,-,*,/,%,^
+                index++;
+                if (index < strings.length && isNumber(strings[index])) {
+                    double operand = Double.parseDouble(strings[index]);
+                    switch (strings[index - 1]) {
+                        case "+":
+                            result += operand;
+                            break;
+                        case "-":
+                            result -= operand;
+                            break;
+                        case "*":
+                            result *= operand;
+                            break;
+                        case "/":
+                            result /= operand;
+                            break;
+                        case "%":
+                            result %= operand;
+                            break;
+                        case "^":
+                            result = Math.pow(result, operand);
+                            break;
+                    }
                 } else {
-                    // Обробка виразу у дужках
-                    int openParenthesesCount = 1;
-                    int j = i + 1;
-                    while (j < strings.length) {
-                        if (strings[j].equals("(")) {
-                            openParenthesesCount++;
-                        } else if (strings[j].equals(")")) {
-                            openParenthesesCount--;
-                            if (openParenthesesCount == 0) {
-                                result = strings[i - 1].equals("+") ?
-                                        result + calcMathExpression(concatenateStrings(strings, i + 1, j)) :
-                                        result - calcMathExpression(concatenateStrings(strings, i + 1, j));
-                                i = j;
-                                break;
+                        // Обробка виразу у дужках
+                        int openParenthesesCount = 1;
+                        int j = index + 1;
+                        while (j < strings.length) {
+                            if (strings[j].equals("(")) {
+                                openParenthesesCount++;
+                            } else if (strings[j].equals(")")) {
+                                openParenthesesCount--;
+                                if (openParenthesesCount == 0) {
+                                    switch (strings[index - 1]) {
+                                        case "+":
+                                            result += calcMathExpression(concatenateStrings(strings, index + 1, j)) ;
+                                            break;
+                                        case "-":
+                                            result -= calcMathExpression(concatenateStrings(strings, index + 1, j)) ;
+                                            break;
+                                        case "*":
+                                            result *= calcMathExpression(concatenateStrings(strings, index + 1, j)) ;
+                                            break;
+                                        case "/":
+                                            result /= calcMathExpression(concatenateStrings(strings, index + 1, j)) ;
+                                            break;
+                                        case "%":
+                                            result %= calcMathExpression(concatenateStrings(strings, index + 1, j)) ;
+                                            break;
+                                        case "^":
+                                            result = Math.pow(result, calcMathExpression(concatenateStrings(strings, index + 1, j)) );
+                                            break;
+                                        case "sin":
+                                            result = Math.sin(calcMathExpression(concatenateStrings(strings, index + 1, j)));
+                                            break;
+                                        case "cos":
+                                            result = Math.cos(calcMathExpression(concatenateStrings(strings, index + 1, j)));
+                                            break;
+                                        case "sqrt":
+                                            result = Math.sqrt(calcMathExpression(concatenateStrings(strings, index + 1, j)));
+                                            break;
+                                    }
+                                    index = j;
+                                    break;
+                                }
                             }
-                        }
-                        j++;
-                    }
-                }
-            } else if (strings[i].equals("*") || strings[i].equals("/")) {
-                // Множення або ділення
-                i++;
-                double operand = Double.parseDouble(strings[i]);
-                result = strings[i - 1].equals("*") ? result * operand : result / operand;
-            } else if (strings[i].equals("%")) {
-                // Ділення по модулю
-                i++;
-                double operand = Double.parseDouble(strings[i]);
-                result %= operand;
-            } else if (isSquare(strings[i]) || isTrigonometricFunction(strings[i])) {
-                i++;
-                // Після "sqrt" дужка, ми продовжуємо обробку виразу в дужках
-                int openParenthesesCount = 1;
-                int j = i + 1;
-                while (j < strings.length) {
-                    if (strings[j].equals("(")) {
-                        openParenthesesCount++;
-                    } else if (strings[j].equals(")")) {
-                        openParenthesesCount--;
-                        if (openParenthesesCount == 0) {
-                            result = (isSquare(strings[i - 1])) ? Math.sqrt(calcMathExpression(concatenateStrings(strings, i + 1, j))) :
-                                    Math.sin(calcMathExpression(concatenateStrings(strings, i + 1, j)));
-                            i = j;
-                            break;
+                            j++;
                         }
                     }
-                    j++;
+                } else {
+                    // Просто число
+                    result = Double.parseDouble(strings[index]);
                 }
-            } else {
-                // Просто число
-                result = Double.parseDouble(strings[i]);
+                index++;
             }
-            i++;
+            return result;
         }
-        return result;
-    }
+
 
     private boolean isOperator(String str) {
-        return "+-*/%sqrt^()".contains(str);
+        return "+-*/%^".contains(str);
     }
 
-    private boolean isSquare(String str) {
+    private boolean isBracket(String str) {
+        return "()".contains(str);
+    }
+
+    private boolean isSquareRoot(String str) {
         return str.equals("sqrt");
     }
 
     private boolean isTrigonometricFunction(String str) {
-        return "sincos".contains(str);
+        return "sin_cos".contains(str);
     }
 
     private boolean isNumber(String str) {
