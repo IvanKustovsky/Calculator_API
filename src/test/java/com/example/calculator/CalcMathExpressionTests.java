@@ -110,10 +110,35 @@ class CalcMathExpressionTests {
     }
 
     @Test
+    public void testWithConstant() {
+        mathExpression.setMathExpression("π^2");
+        assertEquals(9.87, mathExpression.calcMathExpression(), 0.001);
+    }
+
+    @Test
+    public void testWithConstants() {
+        mathExpression.setMathExpression("π^e");
+        assertEquals(22.459, mathExpression.calcMathExpression(), 0.001);
+    }
+
+    @Test
+    public void testWithSimpleFactorial() {
+        mathExpression.setMathExpression("5!");
+        assertEquals(120, mathExpression.calcMathExpression(), 0.001);
+    }
+
+    @Test
+    public void testWithSimpleFactorial() {
+        mathExpression.setMathExpression("4+(2+2)!");
+        assertEquals(28, mathExpression.calcMathExpression(), 0.001);
+    }
+
+    @Test
     public void testWithEverything() {
         mathExpression.setMathExpression("2+3*(4-sqrt(16))/cos(0)%3^2");
         assertEquals(2.0, mathExpression.calcMathExpression(), 0.001);
     }
+
 
 
 

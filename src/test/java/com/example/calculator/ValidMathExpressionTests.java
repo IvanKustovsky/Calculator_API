@@ -9,6 +9,37 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ValidMathExpressionTests {
 
     private final MathExpression mathExpression = new MathExpression();
+
+    @Test
+    void testNotValidExpression1() {
+        mathExpression.setMathExpression(")");
+        assertFalse(mathExpression.isValid());
+    }
+    @Test
+    void testNotValidExpression2() {
+        mathExpression.setMathExpression("(");
+        assertFalse(mathExpression.isValid());
+    }
+    @Test
+    void testNotValidExpression3() {
+        mathExpression.setMathExpression("* ");
+        assertFalse(mathExpression.isValid());
+    }
+    @Test
+    void testNotValidExpression4() {
+        mathExpression.setMathExpression("/");
+        assertFalse(mathExpression.isValid());
+    }
+    @Test
+    void testNotValidExpression5() {
+        mathExpression.setMathExpression(" - ");
+        assertFalse(mathExpression.isValid());
+    }
+    @Test
+    void testNotValidExpression6() {
+        mathExpression.setMathExpression("+-");
+        assertFalse(mathExpression.isValid());
+    }
     @Test
     void testValidExpression() {
         mathExpression.setMathExpression("2+3*5");
@@ -95,6 +126,23 @@ public class ValidMathExpressionTests {
     @Test
     public void testValidExpressionWithSqrt2() {
         mathExpression.setMathExpression("sqrt(7+2)");
+        assertTrue(mathExpression.isValid());
+    }
+
+    @Test
+    public void testValidExpressionWithConstant() {
+        mathExpression.setMathExpression("π-1");
+        assertTrue(mathExpression.isValid());
+    }
+
+    @Test
+    public void testValidExpressionWithConstants() {
+        mathExpression.setMathExpression("π-e");
+        assertTrue(mathExpression.isValid());
+    }
+    @Test
+    public void testValidExpressionWithConstantsAndBrackets() {
+        mathExpression.setMathExpression("(π-e^(2-3))");
         assertTrue(mathExpression.isValid());
     }
 
