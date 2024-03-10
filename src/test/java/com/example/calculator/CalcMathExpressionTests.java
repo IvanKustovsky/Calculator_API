@@ -92,6 +92,12 @@ class CalcMathExpressionTests {
     }
 
     @Test
+    public void testSimpleActionOrder2() {
+        mathExpression.setMathExpression("2-3+4^2*5");
+        assertEquals(79.0, mathExpression.calcMathExpression(), 0.001);
+    }
+
+    @Test
     public void testPow() {
         mathExpression.setMathExpression("2^5");
         assertEquals(32.0, mathExpression.calcMathExpression(), 0.001);
@@ -102,6 +108,15 @@ class CalcMathExpressionTests {
         mathExpression.setMathExpression("2^(5-1)");
         assertEquals(16.0, mathExpression.calcMathExpression(), 0.001);
     }
+
+    @Test
+    public void testWithEverything() {
+        mathExpression.setMathExpression("2+3*(4-sqrt(16))/cos(0)%3^2");
+        assertEquals(2.0, mathExpression.calcMathExpression(), 0.001);
+    }
+
+
+
 
 }
 

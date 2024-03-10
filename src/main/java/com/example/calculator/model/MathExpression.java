@@ -17,6 +17,9 @@ public class MathExpression {
     private String mathExpression;
 
     public double calcMathExpression() {
+        if(!isValid()){
+            throw new IllegalMathExpressionException();
+        }
         return calcMathExpression(mathExpression);
     }
 
@@ -64,9 +67,6 @@ public class MathExpression {
     }
 
     private double calcMathExpression(String mathExpression) {
-        if (!isValid()) {
-            throw new IllegalMathExpressionException();
-        }
         double result = 0;
         String[] strings = mathExpression.trim().
                 split("(?<=[-+*/%()^])|(?=[-+*/%()^])|(?<=sqrt)|(?=sqrt)|(?<=sin)|(?=sin)|(?<=cos)|(?=cos)");
@@ -96,9 +96,17 @@ public class MathExpression {
                     double operand = Double.parseDouble(strings[index]);
                     switch (strings[index - 1]) {
                         case "+":
+                            if(index + 1 < strings.length && strings[index + 1] != null && "*/%^".contains(strings[index + 1])) {
+                                result += calcMathExpression(concatenateStrings(strings, index, strings.length));
+                                return result;
+                            }
                             result += operand;
                             break;
                         case "-":
+                            if(index + 1 < strings.length && strings[index + 1] != null && "*/%^".contains(strings[index + 1])) {
+                                result -= calcMathExpression(concatenateStrings(strings, index, strings.length));
+                                return result;
+                            }
                             result -= operand;
                             break;
                         case "*":
