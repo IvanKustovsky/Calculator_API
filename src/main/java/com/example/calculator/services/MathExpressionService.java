@@ -1,5 +1,6 @@
 package com.example.calculator.services;
 
+import com.example.calculator.annotation.ExpressionValidator;
 import com.example.calculator.exception.IllegalMathExpressionException;
 import com.example.calculator.model.MathExpression;
 import jakarta.validation.Valid;
@@ -15,9 +16,11 @@ public class MathExpressionService {
 
     private MathExpression mathExpression = new MathExpression();
 
-    public double calculateMathExpression(String expression) {
+    @ExpressionValidator
+    public double calculateMathExpression(String expression) throws IllegalMathExpressionException {
         mathExpression.setMathExpression(expression);
-        return calcMathExpression(mathExpression.getMathExpression());
+        mathExpression.setResult(calcMathExpression(mathExpression.getMathExpression()));
+        return mathExpression.getResult();
     }
 
     private double calcMathExpression(String mathExpression) {
@@ -132,14 +135,11 @@ public class MathExpressionService {
     }
 
     private double getOperandValue(String operand) {
-        switch (operand) {
-            case "e":
-                return Math.E;
-            case "π":
-                return Math.PI;
-            default:
-                return Double.parseDouble(operand);
-        }
+        return switch (operand) {
+            case "e" -> Math.E;
+            case "π" -> Math.PI;
+            default -> Double.parseDouble(operand);
+        };
     }
 
     private boolean isConstant(String str) {
