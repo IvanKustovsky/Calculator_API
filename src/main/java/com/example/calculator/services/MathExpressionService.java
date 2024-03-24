@@ -1,7 +1,6 @@
 package com.example.calculator.services;
 
 import com.example.calculator.annotation.ExpressionValidator;
-import com.example.calculator.exception.IllegalMathExpressionException;
 import com.example.calculator.model.MathExpression;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,121 +14,142 @@ public class MathExpressionService {
     private MathExpression mathExpression = new MathExpression();
 
     @ExpressionValidator
-    public double calculateMathExpression(String expression) throws IllegalMathExpressionException {
+    public double calculateMathExpression(String expression) {
         mathExpression.setMathExpression(expression);
         mathExpression.setResult(calcMathExpression(mathExpression.getMathExpression()));
         return mathExpression.getResult();
     }
 
-    private double calcMathExpression(String mathExpression) {
-        double result = 0;
-        String[] strings = mathExpression.trim().
+    private double calcMathExpression(String expression) {
+        String[] strings = expression.trim().
                 split("(?<=[-+*/%()^eπ])|(?=[-+*/%()^eπ])|(?<=sqrt)|(?=sqrt)|(?<=sin)|(?=sin)|(?<=cos)|(?=cos)");
         int index = 0;
         while (index < strings.length) {
             if (strings[index].equals("(")) {
                 // обробка виразу у дужках
-                int openParenthesesCount = 1;
-                int j = index + 1;
-                while (j < strings.length) {
-                    if (strings[j].equals("(")) {
-                        openParenthesesCount++;
-                    } else if (strings[j].equals(")")) {
-                        openParenthesesCount--;
-                        if (openParenthesesCount == 0) {
-                            result += calcMathExpression(concatenateStrings(strings, index + 1, j));
-                            index = j;
-                            break;
+                index = processExpressionInParentheses(strings, index);
+            } else if (isOperator(strings[index]) || isTrigonometricFunction(strings[index]) || isSquareRoot(strings[index])) {
+                // Оператори + , - , * , / , % , ^ , sin() , cos() , sqrt()
+                index = (index == 0) ? index : index + 1;
+                if (index < strings.length && (isNumber(strings[index]) || isConstant(strings[index])
+                        || isTrigonometricFunction(strings[index]) || isSquareRoot(strings[index]))) {
+                    double operand;
+                    if(isTrigonometricFunction(strings[index]) || isSquareRoot(strings[index])) {
+                        double currentRes = mathExpression.getResult();
+                        operand = calcTrigonometricFunctionOrSquareRoot(strings, index + 1);
+                        mathExpression.setResult(currentRes);
+                        int indexOfClosingBracket = findIndexOfClosingBracket(strings, index + 1);
+                        if(indexOfClosingBracket + 1 >= strings.length) {
+                            if(index == 0){
+                                return operand;
+                            } else {
+                                strings[indexOfClosingBracket] = String.valueOf(operand);
+                                return calculateMathExpression(concatenateStrings(strings, indexOfClosingBracket, strings.length));
+                            }
                         }
+                    } else {
+                        operand = getOperandValue(strings[index]);
                     }
-                    j++;
-                }
-            } else if (isOperator(strings[index]) || isSquareRoot(strings[index]) || isTrigonometricFunction(strings[index])) {
-                // Оператори +,-,*,/,%,^
-                index++;
-                if (index < strings.length && (isNumber(strings[index]) || isConstant(strings[index]))) {
-                    double operand = getOperandValue(strings[index]);
                     switch (strings[index - 1]) {
                         case "+":
-                            if (index + 1 < strings.length && strings[index + 1] != null && "*/%^".contains(strings[index + 1])) {
-                                result += calcMathExpression(concatenateStrings(strings, index, strings.length));
-                                return result;
+                            if (index + 1 < strings.length && isHigherPriorityOperation(strings[index + 1])) {
+                                mathExpression.setResult(mathExpression.getResult() +
+                                        calcMathExpression(concatenateStrings(strings, index, strings.length)));
+                                return mathExpression.getResult();
                             }
-                            result += operand;
+                            mathExpression.setResult(mathExpression.getResult() + operand);
                             break;
                         case "-":
-                            if (index + 1 < strings.length && strings[index + 1] != null && "*/%^".contains(strings[index + 1])) {
-                                result -= calcMathExpression(concatenateStrings(strings, index, strings.length));
-                                return result;
+                            if (index + 1 < strings.length && isHigherPriorityOperation(strings[index + 1])) {
+                                mathExpression.setResult(mathExpression.getResult() -
+                                        calcMathExpression(concatenateStrings(strings, index, strings.length)));
+                                return mathExpression.getResult();
                             }
-                            result -= operand;
+                            mathExpression.setResult(mathExpression.getResult() - operand);
                             break;
                         case "*":
-                            result *= operand;
+                            mathExpression.setResult(mathExpression.getResult() * operand);
                             break;
                         case "/":
-                            result /= operand;
+                            mathExpression.setResult(mathExpression.getResult() / operand);
                             break;
                         case "%":
-                            result %= operand;
+                            mathExpression.setResult(mathExpression.getResult() % operand);
                             break;
                         case "^":
-                            result = Math.pow(result, operand);
+                            mathExpression.setResult(Math.pow(mathExpression.getResult(), operand));
                             break;
                     }
-                } else {
-                    // Обробка виразу у дужках
-                    int openParenthesesCount = 1;
-                    int j = index + 1;
-                    while (j < strings.length) {
-                        if (strings[j].equals("(")) {
-                            openParenthesesCount++;
-                        } else if (strings[j].equals(")")) {
-                            openParenthesesCount--;
-                            if (openParenthesesCount == 0) {
-                                switch (strings[index - 1]) {
-                                    case "+":
-                                        result += calcMathExpression(concatenateStrings(strings, index + 1, j));
-                                        break;
-                                    case "-":
-                                        result -= calcMathExpression(concatenateStrings(strings, index + 1, j));
-                                        break;
-                                    case "*":
-                                        result *= calcMathExpression(concatenateStrings(strings, index + 1, j));
-                                        break;
-                                    case "/":
-                                        result /= calcMathExpression(concatenateStrings(strings, index + 1, j));
-                                        break;
-                                    case "%":
-                                        result %= calcMathExpression(concatenateStrings(strings, index + 1, j));
-                                        break;
-                                    case "^":
-                                        result = Math.pow(result, calcMathExpression(concatenateStrings(strings, index + 1, j)));
-                                        break;
-                                    case "sin":
-                                        result = Math.sin(calcMathExpression(concatenateStrings(strings, index + 1, j)));
-                                        break;
-                                    case "cos":
-                                        result = Math.cos(calcMathExpression(concatenateStrings(strings, index + 1, j)));
-                                        break;
-                                    case "sqrt":
-                                        result = Math.sqrt(calcMathExpression(concatenateStrings(strings, index + 1, j)));
-                                        break;
-                                }
-                                index = j;
-                                break;
-                            }
-                        }
-                        j++;
-                    }
+                } else { // Обробка виразу у дужках
+                       index = processExpressionInParentheses(strings, index);
                 }
-            } else {
-                // Просто число чи константа
-                result = getOperandValue(strings[index]);
+            } else { // Просто число або константа
+                mathExpression.setResult(getOperandValue(strings[index]));
             }
             index++;
         }
-        return result;
+        return mathExpression.getResult();
+    }
+
+    private int processExpressionInParentheses(String[] strings, int index) {
+        int indexOfClosingBracket = findIndexOfClosingBracket(strings, index);
+        if (indexOfClosingBracket != -1) {
+            if (index - 1 < 0 || isSquareRoot(strings[index]) || isTrigonometricFunction(strings[index])) {
+                mathExpression.setResult(mathExpression.getResult() +
+                        calcMathExpression(concatenateStrings(strings, index + 1, indexOfClosingBracket)));
+            } else {
+                switch (strings[index - 1]) {
+                    case "+" -> mathExpression.setResult(mathExpression.getResult() +
+                            calcMathExpression(concatenateStrings(strings, index + 1, indexOfClosingBracket)));
+                    case "-" -> mathExpression.setResult(mathExpression.getResult() -
+                            calcMathExpression(concatenateStrings(strings, index + 1, indexOfClosingBracket)));
+                    case "*" -> mathExpression.setResult(mathExpression.getResult() *
+                            calcMathExpression(concatenateStrings(strings, index + 1, indexOfClosingBracket)));
+                    case "/" -> mathExpression.setResult(mathExpression.getResult() /
+                            calcMathExpression(concatenateStrings(strings, index + 1, indexOfClosingBracket)));
+                    case "%" -> mathExpression.setResult(mathExpression.getResult() %
+                            calcMathExpression(concatenateStrings(strings, index + 1, indexOfClosingBracket)));
+                    case "^" -> mathExpression.setResult(Math.pow(mathExpression.getResult(),
+                            calcMathExpression(concatenateStrings(strings, index + 1, indexOfClosingBracket))));
+                }
+            }
+        }
+        return indexOfClosingBracket;
+    }
+
+    private int findIndexOfClosingBracket(String[] strings, int indexOfOpeningBracket) {
+        int indexOfClosingBracket = indexOfOpeningBracket + 1;
+        int openParenthesesCount = 1;
+        while (indexOfClosingBracket < strings.length) {
+            if (strings[indexOfClosingBracket].equals("(")) {
+                openParenthesesCount++;
+            } else if (strings[indexOfClosingBracket].equals(")")) {
+                openParenthesesCount--;
+            }
+            if (openParenthesesCount == 0) {
+                return indexOfClosingBracket;
+            }
+            indexOfClosingBracket++;
+        }
+        return -1; // There is no closing bracket
+    }
+
+    private double calcTrigonometricFunctionOrSquareRoot(String[] strings, int index) {
+        int indexOfClosingBracket = findIndexOfClosingBracket(strings, index);
+        if (indexOfClosingBracket != -1) {
+            switch (strings[index - 1]) {
+                case "sin" -> {
+                    return Math.sin(calcMathExpression(concatenateStrings(strings, index + 1, indexOfClosingBracket)));
+                }
+                case "cos" -> {
+                    return Math.cos(calcMathExpression(concatenateStrings(strings, index + 1, indexOfClosingBracket)));
+                }
+                case "sqrt" -> {
+                    return Math.sqrt(calcMathExpression(concatenateStrings(strings, index + 1, indexOfClosingBracket)));
+                }
+            }
+        }
+        return 0;
     }
 
     private double getOperandValue(String operand) {
@@ -138,6 +158,10 @@ public class MathExpressionService {
             case "π" -> Math.PI;
             default -> Double.parseDouble(operand);
         };
+    }
+
+    private boolean isHigherPriorityOperation(String operation) {
+        return operation != null && "*/%^".contains(operation);
     }
 
     private boolean isConstant(String str) {

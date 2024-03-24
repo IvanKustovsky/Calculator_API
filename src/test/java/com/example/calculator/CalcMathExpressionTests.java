@@ -88,6 +88,12 @@ class CalcMathExpressionTests {
     }
 
     @Test
+    public void testSinPlusCos() {
+        mathExpression.setMathExpression("sin(3.14/2)+cos(3.14/2)");
+        assertEquals(Math.sin(3.14/2), mathExpressionService.calculateMathExpression(mathExpression.getMathExpression()), 0.001);
+    }
+
+    @Test
     public void testSimpleActionOrder() {
         mathExpression.setMathExpression("2+3*5");
         assertEquals(17.0, mathExpressionService.calculateMathExpression(mathExpression.getMathExpression()), 0.001);
@@ -97,6 +103,12 @@ class CalcMathExpressionTests {
     public void testSimpleActionOrder2() {
         mathExpression.setMathExpression("2-3+4^2*5");
         assertEquals(79.0, mathExpressionService.calculateMathExpression(mathExpression.getMathExpression()), 0.001);
+    }
+
+    @Test
+    public void testSimpleActionOrder3() {
+        mathExpression.setMathExpression("2+3*4/2-3");
+        assertEquals(5.0, mathExpressionService.calculateMathExpression(mathExpression.getMathExpression()), 0.001);
     }
 
     @Test
@@ -126,6 +138,30 @@ class CalcMathExpressionTests {
     @Test
     public void testWithEverything() {
         mathExpression.setMathExpression("2+3*(4-sqrt(16))/cos(0)%3^2");
+        assertEquals(2.0, mathExpressionService.calculateMathExpression(mathExpression.getMathExpression()), 0.001);
+    }
+
+    @Test
+    public void testWithEverything1() {
+        mathExpression.setMathExpression("3*(4-sqrt(16))/cos(0)%3^2");
+        assertEquals(0.0, mathExpressionService.calculateMathExpression(mathExpression.getMathExpression()), 0.001);
+    }
+
+    @Test
+    public void testWithEverything2() {
+        mathExpression.setMathExpression("2/cos(0)%3^2");
+        assertEquals(2.0, mathExpressionService.calculateMathExpression(mathExpression.getMathExpression()), 0.001);
+    }
+
+    @Test
+    public void testOrder() {
+        mathExpression.setMathExpression("2+3*0/1%3^2");
+        assertEquals(2.0, mathExpressionService.calculateMathExpression(mathExpression.getMathExpression()), 0.001);
+    }
+
+    @Test
+    public void testWithRoot() {
+        mathExpression.setMathExpression("4-sqrt(4)");
         assertEquals(2.0, mathExpressionService.calculateMathExpression(mathExpression.getMathExpression()), 0.001);
     }
 

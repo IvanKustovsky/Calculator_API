@@ -23,11 +23,11 @@ public class CalculatorController {
             double result = mathExpressionService.calculateMathExpression(expression);
             calculationResponse = new CalculationResponse
                     (result, "200", "Calculation was successful.");
-        } catch (IllegalMathExpressionException e) {
-            log.error("Illegal math expression: {}", expression, e);
+        } catch (IllegalMathExpressionException ex) {
+            log.error("{} Client expression: {}", ex.getMessage(), expression);
             calculationResponse = new CalculationResponse("400", "Bad request.");
-        } catch (Exception e) {
-            log.error("Error calculating expression: {}", expression, e);
+        } catch (Exception ex) {
+            log.error("Error calculating expression: {}", expression);
             calculationResponse = new CalculationResponse("500", "Server Error.");
         }
         return ResponseEntity.ok(calculationResponse);
