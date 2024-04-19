@@ -1,6 +1,7 @@
 package com.example.calculator.services;
 
 import com.example.calculator.annotation.ExpressionValidator;
+import com.example.calculator.constants.CalculationSymbols;
 import com.example.calculator.model.MathExpression;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,15 +27,13 @@ public class MathExpressionService {
         int index = 0;
         while (index < strings.length) {
             if (strings[index].equals("(")) {
-                // обробка виразу у дужках
-                index = processExpressionInParentheses(strings, index);
-            } else if (isOperator(strings[index]) || isTrigonometricFunction(strings[index]) || isSquareRoot(strings[index])) {
+                index = processExpressionInParentheses(strings, index); // обробка виразу у дужках
+            } else if (isOperator(strings[index]) || isFunction(strings[index])) {
                 // Оператори + , - , * , / , % , ^ , sin() , cos() , sqrt()
                 index = (index == 0) ? index : index + 1;
-                if (index < strings.length && (isNumber(strings[index]) || isConstant(strings[index])
-                        || isTrigonometricFunction(strings[index]) || isSquareRoot(strings[index]))) {
+                if (index < strings.length && (isNumber(strings[index]) || isConstant(strings[index]) || isFunction(strings[index]))) {
                     double operand;
-                    if(isTrigonometricFunction(strings[index]) || isSquareRoot(strings[index])) {
+                    if(isFunction(strings[index])) {
                         double currentRes = mathExpression.getResult();
                         operand = calcTrigonometricFunctionOrSquareRoot(strings, index + 1);
                         mathExpression.setResult(currentRes);
@@ -42,43 +41,35 @@ public class MathExpressionService {
                         if(indexOfClosingBracket + 1 >= strings.length) {
                             if(index == 0){
                                 return operand;
-                            } else {
-                                strings[indexOfClosingBracket] = String.valueOf(operand);
-                                return calculateMathExpression(concatenateStrings(strings, indexOfClosingBracket, strings.length));
                             }
+                        } else {
+                            strings[indexOfClosingBracket] = String.valueOf(operand);
+                            return calculateMathExpression(concatenateStrings(strings, indexOfClosingBracket, strings.length));
                         }
                     } else {
                         operand = getOperandValue(strings[index]);
                     }
                     switch (strings[index - 1]) {
-                        case "+":
+                        case "+" -> {
                             if (index + 1 < strings.length && isHigherPriorityOperation(strings[index + 1])) {
                                 mathExpression.setResult(mathExpression.getResult() +
                                         calcMathExpression(concatenateStrings(strings, index, strings.length)));
                                 return mathExpression.getResult();
                             }
                             mathExpression.setResult(mathExpression.getResult() + operand);
-                            break;
-                        case "-":
+                        }
+                        case "-" -> {
                             if (index + 1 < strings.length && isHigherPriorityOperation(strings[index + 1])) {
                                 mathExpression.setResult(mathExpression.getResult() -
                                         calcMathExpression(concatenateStrings(strings, index, strings.length)));
                                 return mathExpression.getResult();
                             }
                             mathExpression.setResult(mathExpression.getResult() - operand);
-                            break;
-                        case "*":
-                            mathExpression.setResult(mathExpression.getResult() * operand);
-                            break;
-                        case "/":
-                            mathExpression.setResult(mathExpression.getResult() / operand);
-                            break;
-                        case "%":
-                            mathExpression.setResult(mathExpression.getResult() % operand);
-                            break;
-                        case "^":
-                            mathExpression.setResult(Math.pow(mathExpression.getResult(), operand));
-                            break;
+                        }
+                        case "*" -> mathExpression.setResult(mathExpression.getResult() * operand);
+                        case "/" -> mathExpression.setResult(mathExpression.getResult() / operand);
+                        case "%" -> mathExpression.setResult(mathExpression.getResult() % operand);
+                        case "^" -> mathExpression.setResult(Math.pow(mathExpression.getResult(), operand));
                     }
                 } else { // Обробка виразу у дужках
                        index = processExpressionInParentheses(strings, index);
@@ -94,7 +85,7 @@ public class MathExpressionService {
     private int processExpressionInParentheses(String[] strings, int index) {
         int indexOfClosingBracket = findIndexOfClosingBracket(strings, index);
         if (indexOfClosingBracket != -1) {
-            if (index - 1 < 0 || isSquareRoot(strings[index]) || isTrigonometricFunction(strings[index])) {
+            if (index - 1 < 0 || isFunction(strings[index])) {
                 mathExpression.setResult(mathExpression.getResult() +
                         calcMathExpression(concatenateStrings(strings, index + 1, indexOfClosingBracket)));
             } else {
@@ -164,24 +155,16 @@ public class MathExpressionService {
         return operation != null && "*/%^".contains(operation);
     }
 
-    private boolean isConstant(String str) {
-        return "eπ".contains(str);
+    private boolean isOperator(String token) {
+        return CalculationSymbols.OPERATORS.contains(token);
     }
 
-    private boolean isOperator(String str) {
-        return "+-*/%^".contains(str);
+    private boolean isFunction(String token) {
+        return CalculationSymbols.FUNCTIONS.contains(token);
     }
 
-    private boolean isBracket(String str) {
-        return "()".contains(str);
-    }
-
-    private boolean isSquareRoot(String str) {
-        return str.equals("sqrt");
-    }
-
-    private boolean isTrigonometricFunction(String str) {
-        return "sin_cos".contains(str);
+    private boolean isConstant(String token) {
+        return CalculationSymbols.CONSTANTS.contains(token);
     }
 
     private boolean isNumber(String str) {

@@ -165,9 +165,5 @@ class CalcMathExpressionTests {
         assertEquals(2.0, mathExpressionService.calculateMathExpression(mathExpression.getMathExpression()), 0.001);
     }
 
-
-
-
-
 }
 
